@@ -22,7 +22,7 @@ fn main() {
         Ok(value) => value,
         Err(_) => panic!("Number of parts introduced wasn't a number")
     };
-    
+
     if number_of_sol_parts <=1{
         panic!("Number of parts to form the secret has to be bigger than 1");
     }
@@ -30,11 +30,10 @@ fn main() {
         panic!("Number of parts to form the secret back is larger than the total number of parts");
     }
 
+    println!("\nThe message is: \"{}\"\nYou need {} out of {} parts to reveal the secret",secret,number_of_sol_parts,number_of_parts);
     
 
-   
-
-    print!("\nThe message is: {}\nYou need {} out of {} parts to reveal the secret",secret,number_of_sol_parts,number_of_parts);
+    
 }
 
 fn text_input(out_text: &String) -> String{
@@ -49,5 +48,4 @@ fn text_input(out_text: &String) -> String{
         Some(_) => in_text,
         None => String::from("")
     }
-    
 }
