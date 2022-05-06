@@ -41,16 +41,19 @@ fn main() {
     
 }
 
-fn text_input(out_text: &String) -> String{
-    print!("{} ",out_text);
+fn text_input(prompt_text: &String) -> String{
+    print!("{} ",prompt_text);
     io::stdout().flush().unwrap();
     let mut in_text = String::new();
     io::stdin()
         .read_line(&mut in_text)
         .expect("Failed to read the line");
     
-    match in_text.pop(){
-        Some(_) => in_text,
-        None => String::from("")
+    if in_text.ends_with("\n"){
+        in_text.pop().unwrap();
+        if in_text.ends_with("\r"){
+            in_text.pop().unwrap();
+        }
     }
+    in_text
 }
