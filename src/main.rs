@@ -1,4 +1,5 @@
 use std::io::{self, Write};
+use shamir_secret_sharing::{generate_random_numbers};
 fn main() {
     let mut text = String::from("Introduce your secret:");
     let secret:String = text_input(&text);
@@ -32,6 +33,10 @@ fn main() {
 
     println!("\nThe message is: \"{}\"\nYou need {} out of {} parts to reveal the secret",secret,number_of_sol_parts,number_of_parts);
     
+    let mut polynome_coefficients: Vec<u128> = Vec::with_capacity(number_of_sol_parts as usize);
+    unsafe {polynome_coefficients.set_len(number_of_sol_parts as usize);}
+    generate_random_numbers(&mut polynome_coefficients);
+    println!("{:?},\n size:{}",polynome_coefficients,polynome_coefficients.len());
 
     
 }
