@@ -1,5 +1,5 @@
 use std::io::{self, Write};
-use shamir_secret_sharing::{generate_random_numbers};
+use shamir_secret_sharing::{generate_random_numbers,test_bacon_sci};
 fn main() {
     let mut text = String::from("Introduce your secret:");
     let secret:String = text_input(&text);
@@ -38,6 +38,7 @@ fn main() {
     generate_random_numbers(&mut polynome_coefficients);
     println!("{:?},\n size:{}",polynome_coefficients,polynome_coefficients.len());
 
+    println!("test bacon-sci:{:?}",test_bacon_sci() as u128);
     
 }
 

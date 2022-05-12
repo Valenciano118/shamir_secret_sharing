@@ -15,3 +15,4 @@ path = "src/lib.rs"
 
 [dependencies]
 rand="0.8.5"
+bacon-sci="0.13.1"
