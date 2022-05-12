@@ -1,5 +1,6 @@
 use std::io::{self, Write};
-use shamir_secret_sharing::{generate_random_numbers,test_bacon_sci};
+use shamir_secret_sharing::*;
+use winterfell::Serializable;
 fn main() {
     let mut text = String::from("Introduce your secret:");
     let secret:String = text_input(&text);
@@ -38,7 +39,18 @@ fn main() {
     generate_random_numbers(&mut polynome_coefficients);
     println!("{:?},\n size:{}",polynome_coefficients,polynome_coefficients.len());
 
-    println!("test bacon-sci:{:?}",test_bacon_sci() as u128);
+    println!("test winterfall: {:?},",test_winter_math());
+    let mut test:Cipher = cypher_aes(&secret);
+    println!("source text:{}, key:{}, cyphered_text:{}",secret,&test.keys.base64_key,&test.ciphered_text);
+
+    let fernet = fernet::Fernet::new(&test.keys.base64_key).unwrap();
+    let s = match String::from_utf8(fernet.decrypt(&test.ciphered_text).unwrap()){
+        Ok(v) => v,
+        Err(_) => panic!("Invalid UTF-8 sequence"),
+    };
+    println!("deciphered text:{}",s);
+
+    
     
 }
 
