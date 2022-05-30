@@ -1,18 +1,14 @@
-use aes::cipher::KeyInit;
 use rand::{Rng,thread_rng};
 
 use aes::cipher::{
-    KeyIvInit, StreamCipher, StreamCipherSeek,
-    generic_array::GenericArray,generic_array::arr
+    KeyIvInit, StreamCipher,
+    generic_array::GenericArray
 };
 use sha2::{Sha256,Digest};
 use sha2::digest::generic_array::typenum::U32;
 use sha2::digest::generic_array::typenum::U16;
 
-use aes::Aes256;
 type Aes256Ctr128BE = ctr::Ctr128BE<aes::Aes256>;
-
-
 
 const PRIME:f64 = (2u64.pow(61)-1) as f64;
 
