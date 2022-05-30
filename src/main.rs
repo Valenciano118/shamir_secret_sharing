@@ -1,6 +1,5 @@
 use std::io::{self, Write};
 use shamir_secret_sharing::*;
-use winterfell::Serializable;
 fn main() {
     let mut text = String::from("Introduce your secret:");
     let secret:String = text_input(&text);
@@ -31,28 +30,25 @@ fn main() {
     if number_of_sol_parts > number_of_parts {
         panic!("Number of parts to form the secret back is larger than the total number of parts");
     }
+    
 
     println!("\nThe message is: \"{}\"\nYou need {} out of {} parts to reveal the secret",secret,number_of_sol_parts,number_of_parts);
-    
-    let mut polynome_coefficients: Vec<u128> = Vec::with_capacity(number_of_sol_parts as usize);
-    unsafe {polynome_coefficients.set_len(number_of_sol_parts as usize);}
-    generate_random_numbers(&mut polynome_coefficients);
-    println!("{:?},\n size:{}",polynome_coefficients,polynome_coefficients.len());
 
-    println!("test winterfall: {:?},",test_winter_math());
-    let mut test:Cipher = cypher_aes(&secret);
-    println!("source text:{}, key:{}, cyphered_text:{}",secret,&test.keys.base64_key,&test.ciphered_text);
+    let test_value = 1234 as f64;
+    let test_hashed_value = calculate_hash(&test_value.to_string());
+    let test_cyphered_value = cipher_message(test_hashed_value, &test_value.to_string());
 
-    let fernet = fernet::Fernet::new(&test.keys.base64_key).unwrap();
-    let s = match String::from_utf8(fernet.decrypt(&test.ciphered_text).unwrap()){
-        Ok(v) => v,
-        Err(_) => panic!("Invalid UTF-8 sequence"),
-    };
-    println!("deciphered text:{}",s);
+    println!("The hash value of {} is {:?} and the cypher is {:?}",test_value,test_hashed_value,test_cyphered_value);
 
-    
+    let test_value = 12345 as f64;
+    let test_hashed_value = calculate_hash(&test_value.to_string());
+    let test_cyphered_value = cipher_message(test_hashed_value, &test_value.to_string());
+
+    println!("The hash value of {} is {:?} and the cypher is {:?}",test_value,test_hashed_value,test_cyphered_value);
+
     
 }
+
 
 fn text_input(prompt_text: &String) -> String{
     print!("{} ",prompt_text);

@@ -3,6 +3,11 @@ name = "shamir_secret_sharing"
 version = "0.1.0"
 edition = "2021"
 
+[build]
+jobs=4
+opt-level = 2
+
+
 
 [[bin]]
 name = "shamir_secret_sharing"
@@ -15,3 +20,6 @@ path = "src/lib.rs"
 
 [dependencies]
 rand="0.8.5"
+aes = "0.8.1"
+sha2 = "0.10.2"
+ctr = "0.9.1"
