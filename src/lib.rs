@@ -19,22 +19,57 @@ pub fn calculate_hash<T: AsRef<[u8]>>(t: &T) -> GenericArray<u8,U32> {
     hasher.finalize()
 }
 
-pub fn cipher_message(key: GenericArray<u8,U32>, message: &str) -> Vec<u8> {
-    let mut buf = message.as_bytes().to_vec();
-    let temp_iv_array: [u8;16] = rand::random();
-    let mut iv:GenericArray<u8,U16> = GenericArray::default(); 
-    iv.copy_from_slice(&temp_iv_array);
 
-    let mut cipher= Aes256Ctr128BE::new(&key,&iv);
+
+pub fn cipher_message(key: &GenericArray<u8,U32>, message: &str, initialization_vector: &GenericArray<u8,U16>) -> Vec<u8> {
+    let mut buf = message.as_bytes().to_vec();
+    let mut cipher= Aes256Ctr128BE::new(&key,&initialization_vector);
 
     cipher.apply_keystream(&mut buf);
     buf
 }
 
+fn generate_random_initialization_vector() -> GenericArray<u8,U16>{
+    let temp_iv_array: [u8;16] = rand::random();
+    let mut iv:GenericArray<u8,U16> = GenericArray::default();
+    iv.copy_from_slice(&temp_iv_array);
+    
+    iv
+}
+
+pub struct SecretSharingGenerator {
+    ciphered_message: Vec<u8>,
+    hashed_secret: GenericArray<u8,U32>,
+    initialization_vector: GenericArray<u8,U16>,
+    total_shares: u32,
+    minimum_shares: u32,
+    polynomial: Vec<Point>,
+}
+
+impl SecretSharingGenerator {
+    pub fn new (message: &str, total_shares:u32, minimum_shares:u32) -> Self {
+        let mut rng = thread_rng();
+        let secret:f64 = rng.gen();
+        
+        let hashed_secret = calculate_hash(&secret.to_string());
+
+        let iv = generate_random_initialization_vector();
+
+        let ciphered_message = cipher_message(&hashed_secret, &message,&iv);
+
+        let polynomial = secret_sharing(secret, total_shares, minimum_shares);
+
+        Self { 
+            ciphered_message: ciphered_message ,
+            hashed_secret: hashed_secret,
+            initialization_vector: iv,
+            total_shares: total_shares,
+            minimum_shares: minimum_shares,
+            polynomial: polynomial }
 
 
-
-
+    }
+}
 
 
 
