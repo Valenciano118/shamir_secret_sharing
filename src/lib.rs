@@ -36,7 +36,6 @@ fn generate_random_initialization_vector() -> GenericArray<u8,U16>{
     
     iv
 }
-
 pub struct SecretSharingGenerator {
     ciphered_message: Vec<u8>,
     hashed_secret: GenericArray<u8,U32>,
@@ -69,6 +68,31 @@ impl SecretSharingGenerator {
 
 
     }
+
+    pub fn ciphered_message(self : &Self) -> Vec<u8> {
+        self.ciphered_message.clone()
+    }
+
+    pub fn hashed_secret(self : &Self ) -> GenericArray<u8,U32> {
+        self.hashed_secret
+    }
+
+    pub fn initialization_vector( self : &Self) -> GenericArray<u8,U16>{
+        self.initialization_vector
+    }
+
+    pub fn total_shares(self : &Self) -> u32 {
+        self.total_shares
+    }
+    
+    pub fn minimum_shares(self : &Self) ->u32 {
+        self.minimum_shares
+    }
+
+    pub fn polynomical(self : &Self) -> Vec<Point> {
+        self.polynomial.clone()
+    }
+
 }
 
 
