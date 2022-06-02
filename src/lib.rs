@@ -12,15 +12,6 @@ type Aes256Ctr128BE = ctr::Ctr128BE<aes::Aes256>;
 
 const PRIME:f64 = (2u64.pow(61)-1) as f64;
 
-/* 
-fn test_aes(){
-    let key = GenericArray::from([0u8;16]);
-    let mut block = GenericArray::from([0u8;16]);
-
-    let test = key.
-    let cipher = Aes128::new(&key);
-}
-*/
 
 pub fn calculate_hash<T: AsRef<[u8]>>(t: &T) -> GenericArray<u8,U32> {
     let mut hasher = Sha256::new();
