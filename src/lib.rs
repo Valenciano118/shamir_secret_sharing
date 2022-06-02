@@ -38,10 +38,9 @@ pub fn cipher_message(key: GenericArray<u8,U32>, message: &str) -> Vec<u8> {
 
     cipher.apply_keystream(&mut buf);
     buf
-
-    //cipher.apply_keystream(&mut buf)
-
 }
+
+
 
 
 
