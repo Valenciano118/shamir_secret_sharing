@@ -111,7 +111,7 @@ impl SecretSharing {
 
         let mut hasher = Sha256::new();
 
-        hasher.update(secret.to_string().as_bytes());
+        hasher.update(secret.to_string());
 
         let key = hasher.finalize();
 
@@ -281,7 +281,7 @@ mod tests{
 
     #[test]
     fn check_secret_sharing_solver(){
-        let message = "hello there";
+        let message = "probando";
         let total_shares = 10;
         let minimum_shares = 5;
         let instance = SecretSharing::new(message, total_shares, minimum_shares);
@@ -311,10 +311,26 @@ mod tests{
             .apply_keystream_b2b(&buf1, &mut buf2)
             .unwrap();
 
-        //let string = String::from_utf8(buf2.to_vec()).unwrap();
+        let string = String::from_utf8(buf2.to_vec()).unwrap();
 
-        assert_eq!(plaintext.as_bytes(),&buf2[..]);
+        assert_eq!(plaintext,string);
 
+    }
+
+    #[test]
+    fn check_ciphering_and_deciphering_with_my_functions() {
+        let plaintext = "probando";
+        let key = 1234 as f64;
+        let hashed_key = calculate_hash(&key.to_string());
+        let iv = generate_random_initialization_vector();
+
+        let ciphered_message = cipher_message(&hashed_key, plaintext, &iv);
+        
+        let string = decipher_message(&hashed_key,&iv, ciphered_message);
+
+        assert_eq!(plaintext,string);
+
+        
     }
 
 
