@@ -109,11 +109,7 @@ impl SecretSharing {
     pub fn solve(ciphered_message: Vec<u8>, initialization_vector: &GenericArray<u8,U16>, shares: Vec<Point> ) -> String {
         let secret = interpolate(shares);
 
-        let mut hasher = Sha256::new();
-
-        hasher.update(secret.to_string());
-
-        let key = hasher.finalize();
+        let key = calculate_hash(&secret.to_string());
 
         decipher_message(&key, &initialization_vector, ciphered_message)
     }
@@ -325,8 +321,12 @@ mod tests{
         let iv = generate_random_initialization_vector();
 
         let ciphered_message = cipher_message(&hashed_key, plaintext, &iv);
+
+        let polynomial = secret_sharing(key, 10, 5);
+
+        let interpolated_hashed_key =calculate_hash(&interpolate(polynomial).to_string());
         
-        let string = decipher_message(&hashed_key,&iv, ciphered_message);
+        let string = decipher_message(&interpolated_hashed_key,&iv, ciphered_message);
 
         assert_eq!(plaintext,string);
 
