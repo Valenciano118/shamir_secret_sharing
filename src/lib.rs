@@ -4,6 +4,7 @@ use aes::cipher::{
     KeyIvInit, StreamCipher,
     generic_array::GenericArray
 };
+use aes::cipher::StreamCipherSeek;
 use sha2::{Sha256,Digest};
 use sha2::digest::generic_array::typenum::U32;
 use sha2::digest::generic_array::typenum::U16;
@@ -25,8 +26,18 @@ pub fn cipher_message(key: &GenericArray<u8,U32>, message: &str, initialization_
     let mut buf = message.as_bytes().to_vec();
     let mut cipher= Aes256Ctr128BE::new(&key,&initialization_vector);
 
-    cipher.apply_keystream(&mut buf);
+    cipher.apply_keystream_b2b(message.as_bytes(),&mut buf).unwrap();
     buf
+}
+
+fn decipher_message(key: &GenericArray<u8,U32>, initialization_vector: &GenericArray<u8,U16>, ciphered_message: Vec<u8>) -> String{
+    let mut cipher = Aes256Ctr128BE::new(key, initialization_vector);
+
+    let mut buf = vec![0u8;ciphered_message.len()];
+
+    cipher.apply_keystream_b2b(&ciphered_message, &mut buf).unwrap();
+
+    String::from_utf8(buf).unwrap()
 }
 
 fn generate_random_initialization_vector() -> GenericArray<u8,U16>{
@@ -36,7 +47,9 @@ fn generate_random_initialization_vector() -> GenericArray<u8,U16>{
     
     iv
 }
-pub struct SecretSharingGenerator {
+
+
+pub struct SecretSharing {
     ciphered_message: Vec<u8>,
     hashed_secret: GenericArray<u8,U32>,
     initialization_vector: GenericArray<u8,U16>,
@@ -45,7 +58,7 @@ pub struct SecretSharingGenerator {
     polynomial: Vec<Point>,
 }
 
-impl SecretSharingGenerator {
+impl SecretSharing {
     pub fn new (message: &str, total_shares:u32, minimum_shares:u32) -> Self {
         let mut rng = thread_rng();
         let secret:f64 = rng.gen();
@@ -93,7 +106,21 @@ impl SecretSharingGenerator {
         self.polynomial.clone()
     }
 
+    pub fn solve(ciphered_message: Vec<u8>, initialization_vector: &GenericArray<u8,U16>, shares: Vec<Point> ) -> String {
+        let secret = interpolate(shares);
+
+        let mut hasher = Sha256::new();
+
+        hasher.update(secret.to_string().as_bytes());
+
+        let key = hasher.finalize();
+
+        decipher_message(&key, &initialization_vector, ciphered_message)
+    }
 }
+
+
+
 
 
 
@@ -236,6 +263,58 @@ mod tests{
     fn check_polynome_length(){
         let polynome = secret_sharing(1234 as f64,10,5);
         assert_eq!(polynome[4..=8].len(),5); //from 4 to 8
+    }
+
+    #[test]
+    fn check_hash_is_the_same_for_a_given_value(){
+        let mut hasher1 = Sha256::new();
+        let mut hasher2 = Sha256::new();
+
+        hasher1.update(b"hola");
+        hasher2.update(b"hola");
+
+        let result1 = hasher1.finalize();
+        let result2 = hasher2.finalize();
+
+        assert_eq!(result1,result2);
+    }
+
+    #[test]
+    fn check_secret_sharing_solver(){
+        let message = "hello there";
+        let total_shares = 10;
+        let minimum_shares = 5;
+        let instance = SecretSharing::new(message, total_shares, minimum_shares);
+
+        let solved_message = SecretSharing::solve(instance.ciphered_message(), &instance.initialization_vector(), instance.polynomical());
+
+        assert_eq!(message,solved_message);
+    }
+    #[test]
+    fn check_ciphering_and_deciphering_with_aes256(){
+        let plaintext = "probando";
+        let mut buf1 = vec![0u8;plaintext.len()];
+        let mut buf2 = vec![0u8;plaintext.len()];
+
+        let key = [0x42; 32];
+        let iv = [0x24; 16];
+
+        let mut cipher = Aes256Ctr128BE::new(&key.into(), &iv.into());
+
+        
+        cipher
+            .apply_keystream_b2b(&plaintext.as_bytes(), &mut buf1)
+            .unwrap();
+        
+        cipher.seek(0u32);
+        cipher
+            .apply_keystream_b2b(&buf1, &mut buf2)
+            .unwrap();
+
+        //let string = String::from_utf8(buf2.to_vec()).unwrap();
+
+        assert_eq!(plaintext.as_bytes(),&buf2[..]);
+
     }
 
 

@@ -35,7 +35,7 @@ fn main() {
     println!("\nThe message is: \"{}\"\nYou need {} out of {} parts to reveal the secret",secret_message,minimum_shares,total_shares);
 
 
-    let testing = SecretSharingGenerator::new(&secret_message,total_shares,minimum_shares);
+    let testing = SecretSharing::new(&secret_message,total_shares,minimum_shares);
 
     println!("The cyphered message is:{:?}",testing.ciphered_message());
     println!("The hashed secret is: {:?}",testing.hashed_secret())
