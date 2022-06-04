@@ -48,7 +48,7 @@ fn generate_random_initialization_vector() -> GenericArray<u8,U16>{
     iv
 }
 
-
+#[derive(Debug)]
 pub struct SecretSharing {
     ciphered_message: Vec<u8>,
     hashed_secret: GenericArray<u8,U32>,
@@ -77,7 +77,8 @@ impl SecretSharing {
             initialization_vector: iv,
             total_shares: total_shares,
             minimum_shares: minimum_shares,
-            polynomial: polynomial }
+            polynomial: polynomial 
+        }
 
 
     }

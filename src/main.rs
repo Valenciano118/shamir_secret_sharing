@@ -37,8 +37,11 @@ fn main() {
 
     let testing = SecretSharing::new(&secret_message,total_shares,minimum_shares);
 
-    println!("The cyphered message is:{:?}",testing.ciphered_message());
-    println!("The hashed secret is: {:?}",testing.hashed_secret())
+    println!("The struct is: {:?}",testing);
+
+    let result = SecretSharing::solve(testing.ciphered_message(), &testing.initialization_vector(), testing.polynomical());
+    
+    println!("And the message was:{}",result);
     
 }
 
