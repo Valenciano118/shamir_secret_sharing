@@ -1,3 +1,4 @@
+
 use rand::{Rng,thread_rng};
 
 use aes::cipher::{
@@ -23,7 +24,7 @@ pub fn calculate_hash<T: AsRef<[u8]>>(t: &T) -> GenericArray<u8,U32> {
 
 
 pub fn cipher_message(key: &GenericArray<u8,U32>, message: &str, initialization_vector: &GenericArray<u8,U16>) -> Vec<u8> {
-    let mut buf = message.as_bytes().to_vec();
+    let mut buf = vec![0u8;message.len()];
     let mut cipher= Aes256Ctr128BE::new(&key,&initialization_vector);
 
     cipher.apply_keystream_b2b(message.as_bytes(),&mut buf).unwrap();
@@ -62,8 +63,10 @@ impl SecretSharing {
     pub fn new (message: &str, total_shares:u32, minimum_shares:u32) -> Self {
         let mut rng = thread_rng();
         let secret:f64 = rng.gen();
+
+        let truncated_secret = f64::trunc(secret*100000000.0)/100000000.0;
         
-        let hashed_secret = calculate_hash(&secret.to_string());
+        let hashed_secret = calculate_hash(&truncated_secret.to_string());
 
         let iv = generate_random_initialization_vector();
 
@@ -110,7 +113,9 @@ impl SecretSharing {
     pub fn solve(ciphered_message: Vec<u8>, initialization_vector: &GenericArray<u8,U16>, shares: Vec<Point> ) -> String {
         let secret = interpolate(shares);
 
-        let key = calculate_hash(&secret.to_string());
+        let truncated_secret = f64::trunc(secret*100000000.0)/100000000.0;
+
+        let key = calculate_hash(&truncated_secret.to_string());
 
         decipher_message(&key, &initialization_vector, ciphered_message)
     }
@@ -224,7 +229,7 @@ pub fn interpolate (polynome:Vec<Point>) -> f64{
         }
         result += product;
     }
-    result.round()
+    f64::trunc(result*100000000.0)/100000000.0
 }
 
 
@@ -244,9 +249,11 @@ mod tests{
     }
     #[test]
     fn check_interpolate(){
-        let polynome = secret_sharing(1234 as f64,10,5);
-        let vec:Vec<Point> = Vec::from_iter(polynome[4..=8].iter().cloned());
-        assert_eq!(interpolate(vec),1234 as f64);
+        let secret = 1234.123421342134123412;
+        let result = f64::trunc(secret*100000000.0)/100000000.0;
+        let polynome = secret_sharing(secret as f64,10,5);
+        let vec:Vec<Point> = Vec::from_iter(polynome[3..=8].iter().cloned());
+        assert_eq!(interpolate(vec),result as f64);
     }
 
     #[test]
@@ -314,25 +321,6 @@ mod tests{
 
     }
 
-    #[test]
-    fn check_ciphering_and_deciphering_with_my_functions() {
-        let plaintext = "probando";
-        let key = 1234 as f64;
-        let hashed_key = calculate_hash(&key.to_string());
-        let iv = generate_random_initialization_vector();
-
-        let ciphered_message = cipher_message(&hashed_key, plaintext, &iv);
-
-        let polynomial = secret_sharing(key, 10, 5);
-
-        let interpolated_hashed_key =calculate_hash(&interpolate(polynomial).to_string());
-        
-        let string = decipher_message(&interpolated_hashed_key,&iv, ciphered_message);
-
-        assert_eq!(plaintext,string);
-
-        
-    }
 
 
 }
