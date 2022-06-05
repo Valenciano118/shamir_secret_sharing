@@ -15,38 +15,19 @@ type Aes256Ctr128BE = ctr::Ctr128BE<aes::Aes256>;
 const PRIME:f64 = (2u64.pow(61)-1) as f64;
 
 
-pub fn calculate_hash<T: AsRef<[u8]>>(t: &T) -> GenericArray<u8,U32> {
-    let mut hasher = Sha256::new();
-    hasher.update(t);
-    hasher.finalize()
+
+#[derive(Debug, Clone, Copy)]
+pub struct Point{
+    x:f64,
+    y:f64
 }
-
-
-
-pub fn cipher_message(key: &GenericArray<u8,U32>, message: &str, initialization_vector: &GenericArray<u8,U16>) -> Vec<u8> {
-    let mut buf = vec![0u8;message.len()];
-    let mut cipher= Aes256Ctr128BE::new(&key,&initialization_vector);
-
-    cipher.apply_keystream_b2b(message.as_bytes(),&mut buf).unwrap();
-    buf
-}
-
-fn decipher_message(key: &GenericArray<u8,U32>, initialization_vector: &GenericArray<u8,U16>, ciphered_message: Vec<u8>) -> String{
-    let mut cipher = Aes256Ctr128BE::new(key, initialization_vector);
-
-    let mut buf = vec![0u8;ciphered_message.len()];
-
-    cipher.apply_keystream_b2b(&ciphered_message, &mut buf).unwrap();
-
-    String::from_utf8(buf).unwrap()
-}
-
-fn generate_random_initialization_vector() -> GenericArray<u8,U16>{
-    let temp_iv_array: [u8;16] = rand::random();
-    let mut iv:GenericArray<u8,U16> = GenericArray::default();
-    iv.copy_from_slice(&temp_iv_array);
-    
-    iv
+impl Point {
+    pub fn new(x:f64, y:f64) -> Self {
+        Point{
+            x:x,
+            y:y
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -121,24 +102,38 @@ impl SecretSharing {
     }
 }
 
-
-
-
-
-
-#[derive(Debug, Clone, Copy)]
-pub struct Point{
-    x:f64,
-    y:f64
+pub fn calculate_hash<T: AsRef<[u8]>>(t: &T) -> GenericArray<u8,U32> {
+    let mut hasher = Sha256::new();
+    hasher.update(t);
+    hasher.finalize()
 }
-impl Point {
-    pub fn new(x:f64, y:f64) -> Self {
-        Point{
-            x:x,
-            y:y
-        }
-    }
+
+pub fn cipher_message(key: &GenericArray<u8,U32>, message: &str, initialization_vector: &GenericArray<u8,U16>) -> Vec<u8> {
+    let mut buf = vec![0u8;message.len()];
+    let mut cipher= Aes256Ctr128BE::new(&key,&initialization_vector);
+
+    cipher.apply_keystream_b2b(message.as_bytes(),&mut buf).unwrap();
+    buf
 }
+
+fn decipher_message(key: &GenericArray<u8,U32>, initialization_vector: &GenericArray<u8,U16>, ciphered_message: Vec<u8>) -> String{
+    let mut cipher = Aes256Ctr128BE::new(key, initialization_vector);
+
+    let mut buf = vec![0u8;ciphered_message.len()];
+
+    cipher.apply_keystream_b2b(&ciphered_message, &mut buf).unwrap();
+
+    String::from_utf8(buf).unwrap()
+}
+
+fn generate_random_initialization_vector() -> GenericArray<u8,U16>{
+    let temp_iv_array: [u8;16] = rand::random();
+    let mut iv:GenericArray<u8,U16> = GenericArray::default();
+    iv.copy_from_slice(&temp_iv_array);
+    
+    iv
+}
+
 
 fn calculate_y(x:u32, poly:&Vec<f64> ) -> f64 {
     
@@ -189,10 +184,6 @@ fn secret_sharing(secret:f64, total_shares:u32, minimum_shares:u32) -> Vec<Point
 
 
 }
-
-
-
-
 
 pub fn interpolate (polynome:Vec<Point>) -> f64{
 
@@ -297,7 +288,4 @@ mod tests{
         assert_eq!(plaintext,string);
 
     }
-
-
-
 }
