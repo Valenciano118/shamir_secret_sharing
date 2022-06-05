@@ -140,7 +140,7 @@ impl Point {
     }
 }
 
-fn calculate_Y(x:u32, poly:&Vec<f64> ) -> f64 {
+fn calculate_y(x:u32, poly:&Vec<f64> ) -> f64 {
     
     let mut y:f64 = 0.0;
     let mut temp:f64 = 1.0; 
@@ -180,7 +180,7 @@ fn secret_sharing(secret:f64, total_shares:u32, minimum_shares:u32) -> Vec<Point
     //
     //The points from this resulting vector are the ones that we share to form the secret back
     for x in 1..total_shares{
-        let y:f64 = calculate_Y(x,&polynome);
+        let y:f64 = calculate_y(x,&polynome);
         
         result.push(Point::new(x as f64,y));
     }
@@ -190,26 +190,7 @@ fn secret_sharing(secret:f64, total_shares:u32, minimum_shares:u32) -> Vec<Point
 
 }
 
-fn generate_random_points(n_points:u32) ->Vec<Point>{ 
-    let mut rng = thread_rng();
-    let mut result:Vec<Point> = Vec::new();
-    for i in 1..n_points+1{
-        result.push(
-            Point::new(i as f64,rng.gen())
-        );
-    }
-    result
-}   
 
-
-pub fn generate_polynomial(secret:f64, n_points:u32) -> Vec<Point>{
-    let mut result:Vec<Point> = Vec::new();
-    result.push(Point::new(0.0,secret));
-    result.append(&mut generate_random_points(n_points));
-
-    result
-    
-}
 
 
 
@@ -237,10 +218,6 @@ pub fn interpolate (polynome:Vec<Point>) -> f64{
 mod tests{
     use super::*;
 
-    #[test]
-    fn random_points_generation(){
-        assert_eq!(3,generate_random_points(3).len());
-    }
     #[test]
     fn create_point(){
         let point = Point::new(1.0,2.0);
