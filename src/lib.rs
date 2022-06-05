@@ -5,7 +5,6 @@ use aes::cipher::{
     KeyIvInit, StreamCipher,
     generic_array::GenericArray
 };
-use aes::cipher::StreamCipherSeek;
 use sha2::{Sha256,Digest};
 use sha2::digest::generic_array::typenum::U32;
 use sha2::digest::generic_array::typenum::U16;
@@ -278,7 +277,8 @@ mod tests{
             .apply_keystream_b2b(&plaintext.as_bytes(), &mut buf1)
             .unwrap();
         
-        cipher.seek(0u32);
+        let mut cipher = Aes256Ctr128BE::new(&key.into(), &iv.into());
+
         cipher
             .apply_keystream_b2b(&buf1, &mut buf2)
             .unwrap();
