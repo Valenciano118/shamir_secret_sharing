@@ -50,8 +50,6 @@ fn main() -> io::Result<()> {
 
         let result = SecretSharing::solve(ciphered_message, &initialization_vector, shares);
     
-        println!("And the message was:{}",result);
-
         let result_path = "result.txt";
 
         fs::write(result_path, result)?;
@@ -102,8 +100,6 @@ fn main() -> io::Result<()> {
                 _ => ()
             }
         }
-
-
 
     }
     else{
