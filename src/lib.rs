@@ -42,7 +42,7 @@ pub struct SecretSharing {
 impl SecretSharing {
     pub fn new (message: &str, total_shares:u32, minimum_shares:u32) -> Self {
         let mut rng = thread_rng();
-        let secret_int:u64 = rng.gen_range(0..1000000);
+        let secret_int:u64 = rng.gen_range(0..100000);
 
         let secret = secret_int as f64;
 
