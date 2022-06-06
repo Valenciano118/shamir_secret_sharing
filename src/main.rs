@@ -13,7 +13,7 @@ fn main() -> io::Result<()> {
     let args:Vec<String> = env::args().collect();
 
     if args.len() != 2{
-        panic!("Error! arguments missing.  Usage: shamir_secret_sharing <file>/<directory>")
+        panic!("Error!  Usage: shamir_secret_sharing <file>/<directory>")
     }
 
     let path = Path::new(&args[1]);
@@ -90,6 +90,9 @@ fn main() -> io::Result<()> {
         let serialized_data = generate_json(secret);
 
         let save_dir = chrono::offset::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+        match fs::create_dir_all(&save_dir){
+            _ => ()
+        }
 
         let size = serialized_data.len();
 
@@ -107,76 +110,6 @@ fn main() -> io::Result<()> {
         panic!("Error! argument provided is not a directory nor a file");
     }
 
-/* 
-
-    let mut text = String::from("Introduce your secret message:");
-    let secret_message:String = text_input(&text);
-    
-    if secret_message.len()==0{
-        panic!("The secret must have at least 1 character");
-    }
-
-    text = String::from("Introduce the number of parts to divide the secret:"); 
-    let total_shares:u32 = match text_input(&text).parse(){
-        Ok(value) => value,
-        Err(_) => panic!("Number of parts introduced wasn't a number")
-    };
-
-    if total_shares <=1{
-        panic!("Number of total parts has to be bigger than 1")
-    }
-
-    text = String::from("Introduce the number of parts needed to form the secret back:");
-    let minimum_shares:u32 = match text_input(&text).parse(){
-        Ok(value) => value,
-        Err(_) => panic!("Number of parts introduced wasn't a number")
-    };
-
-    if minimum_shares <=1{
-        panic!("Number of parts to form the secret has to be bigger than 1");
-    }
-    if minimum_shares > total_shares {
-        panic!("Number of parts to form the secret back is larger than the total number of parts");
-    }
-    
-
-    println!("\nThe message is: \"{}\"\nYou need {} out of {} parts to reveal the secret",secret_message,minimum_shares,total_shares);
-
-
-    let testing = SecretSharing::new(&secret_message,total_shares,minimum_shares);
-
-    println!("The struct is: {:?}",testing);
-
-    let mut polynomial = testing.polynomial();
-
-    let mut shares:Vec<Point> = Vec::new();
-
-    for _ in 0..minimum_shares{
-        match polynomial.pop(){
-            Some(point) => shares.push(point),
-            None => ()
-        }
-    }
-
-    let result = SecretSharing::solve(testing.ciphered_message(), &testing.initialization_vector(), shares);
-    
-    println!("And the message was:{}",result);
-
-    
-    //The directory will be named as the current date
-    let path = chrono::offset::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
-    
-    match fs::create_dir_all(&path){
-        _ => ()
-    }
-    let serialized = generate_json(testing);
-    let size = serialized.len();
-    for (i,data) in serialized.iter().enumerate(){
-        let filepath = format!("{}/{}.json",&path,size-i);
-        match fs::write(&filepath, data){
-            _ => ()
-        }
-    */
     Ok(())
 }
 
