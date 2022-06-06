@@ -8,6 +8,8 @@ use aes::cipher::{
 use sha2::{Sha256,Digest};
 use sha2::digest::generic_array::typenum::U32;
 use sha2::digest::generic_array::typenum::U16;
+use serde::{Serialize, Deserialize};
+
 
 type Aes256Ctr128BE = ctr::Ctr128BE<aes::Aes256>;
 
@@ -15,7 +17,7 @@ const PRIME:f64 = (2u64.pow(61)-1) as f64;
 
 
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy,Serialize, Deserialize,)]
 pub struct Point{
     x:f64,
     y:f64
@@ -87,7 +89,7 @@ impl SecretSharing {
         self.minimum_shares
     }
 
-    pub fn polynomical(self : &Self) -> Vec<Point> {
+    pub fn polynomial(self : &Self) -> Vec<Point> {
         self.polynomial.clone()
     }
 
@@ -174,7 +176,7 @@ fn secret_sharing(secret:f64, total_shares:u32, minimum_shares:u32) -> Vec<Point
     //We calculate the f(x) for every x, which is the total number of shares
     //
     //The points from this resulting vector are the ones that we share to form the secret back
-    for x in 1..total_shares{
+    for x in 1..=total_shares{
         let y:f64 = calculate_y(x,&polynome);
         
         result.push(Point::new(x as f64,y));
@@ -257,7 +259,7 @@ mod tests{
         let minimum_shares = 5;
         let instance = SecretSharing::new(message, total_shares, minimum_shares);
 
-        let solved_message = SecretSharing::solve(instance.ciphered_message(), &instance.initialization_vector(), instance.polynomical());
+        let solved_message = SecretSharing::solve(instance.ciphered_message(), &instance.initialization_vector(), instance.polynomial());
 
         assert_eq!(message,solved_message);
     }

@@ -1,5 +1,9 @@
 use std::io::{self, Write};
 use shamir_secret_sharing::*;
+use std::fs;
+use serde::{Serialize, Deserialize};
+use chrono;
+
 fn main() {
     let mut text = String::from("Introduce your secret message:");
     let secret_message:String = text_input(&text);
@@ -39,7 +43,7 @@ fn main() {
 
     println!("The struct is: {:?}",testing);
 
-    let mut polynomial = testing.polynomical();
+    let mut polynomial = testing.polynomial();
 
     let mut shares:Vec<Point> = Vec::new();
 
@@ -53,6 +57,28 @@ fn main() {
     let result = SecretSharing::solve(testing.ciphered_message(), &testing.initialization_vector(), shares);
     
     println!("And the message was:{}",result);
+
+    
+    //The directory will be named as the current date
+    let path = chrono::offset::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+    
+    match fs::create_dir_all(&path){
+        _ => ()
+    }
+    let serialized = generate_json(testing);
+    let size = serialized.len();
+    for (i,data) in serialized.iter().enumerate(){
+        let filepath = format!("{}/{}.json",&path,size-i);
+        match fs::write(&filepath, data){
+            _ => ()
+        }
+    }
+
+
+
+
+
+    
     
 }
 
@@ -72,4 +98,38 @@ fn text_input(prompt_text: &String) -> String{
         }
     }
     in_text
+}
+
+fn generate_json(secret_sharing : SecretSharing) -> Vec<String>{
+
+    let mut result:Vec<String> = Vec::new();
+    let mut polynomial = secret_sharing.polynomial();
+    let min_shares = secret_sharing.minimum_shares();
+    let total_shares = secret_sharing.total_shares();
+    let ciphered_message = secret_sharing.ciphered_message();
+
+    for _ in 0..total_shares{
+        match polynomial.pop(){
+            Some(point) => {
+                let serialized_data = SerializedData{
+                    point : point,
+                    minimum_shares : min_shares,
+                    total_shares : total_shares,
+                    ciphered_message : ciphered_message.clone(), 
+                };
+                result.push(serde_json::to_string(&serialized_data).unwrap());
+            },
+            None => break
+        }   
+    }
+    result
+
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct SerializedData{
+    point : Point,
+    minimum_shares : u32,
+    total_shares : u32,
+    ciphered_message : Vec<u8>,
 }
