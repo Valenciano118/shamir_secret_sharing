@@ -42,11 +42,12 @@ pub struct SecretSharing {
 impl SecretSharing {
     pub fn new (message: &str, total_shares:u32, minimum_shares:u32) -> Self {
         let mut rng = thread_rng();
-        let secret:f64 = rng.gen();
+        let secret_int:u64 = rng.gen_range(0..1000000);
 
-        let truncated_secret = f64::trunc(secret*100000000.0)/100000000.0;
+        let secret = secret_int as f64;
+
         
-        let hashed_secret = calculate_hash(&truncated_secret.to_string());
+        let hashed_secret = calculate_hash(&secret.to_string());
 
         let iv = generate_random_initialization_vector();
 
@@ -200,7 +201,7 @@ pub fn interpolate (polynome:Vec<Point>) -> f64{
         }
         result += product;
     }
-    f64::trunc(result*100000000.0)/100000000.0
+    result.round()
 }
 
 
@@ -216,11 +217,10 @@ mod tests{
     }
     #[test]
     fn check_interpolate(){
-        let secret = 1234.123421342134123412;
-        let result = f64::trunc(secret*100000000.0)/100000000.0;
+        let secret = 1234.0;
         let polynome = secret_sharing(secret as f64,10,5);
         let vec:Vec<Point> = Vec::from_iter(polynome[3..=8].iter().cloned());
-        assert_eq!(interpolate(vec),result as f64);
+        assert_eq!(interpolate(vec),secret as f64);
     }
 
     #[test]

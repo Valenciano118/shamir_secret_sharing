@@ -39,7 +39,18 @@ fn main() {
 
     println!("The struct is: {:?}",testing);
 
-    let result = SecretSharing::solve(testing.ciphered_message(), &testing.initialization_vector(), testing.polynomical());
+    let mut polynomial = testing.polynomical();
+
+    let mut shares:Vec<Point> = Vec::new();
+
+    for _ in 0..minimum_shares{
+        match polynomial.pop(){
+            Some(point) => shares.push(point),
+            None => ()
+        }
+    }
+
+    let result = SecretSharing::solve(testing.ciphered_message(), &testing.initialization_vector(), shares);
     
     println!("And the message was:{}",result);
     
