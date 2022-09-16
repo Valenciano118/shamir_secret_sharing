@@ -9,21 +9,20 @@ use sha2::{Sha256,Digest};
 use sha2::digest::generic_array::typenum::U32;
 use sha2::digest::generic_array::typenum::U16;
 use serde::{Serialize, Deserialize};
+use rug::Float;
 
 
 type Aes256Ctr128BE = ctr::Ctr128BE<aes::Aes256>;
 
 const PRIME:f64 = (2u64.pow(61)-1) as f64;
 
-
-
-#[derive(Debug, Clone, Copy,Serialize, Deserialize,)]
+#[derive(Debug, Clone,Serialize, Deserialize,)]
 pub struct Point{
-    x:f64,
-    y:f64
+    x:Float,
+    y:Float
 }
 impl Point {
-    pub fn new(x:f64, y:f64) -> Self {
+    pub fn new(x:Float, y:Float) -> Self {
         Point{
             x:x,
             y:y
@@ -46,7 +45,7 @@ impl SecretSharing {
         let mut rng = thread_rng();
         let secret_int:u64 = rng.gen_range(0..100000);
 
-        let secret = secret_int as f64;
+        let secret = Float::with_val(2048, secret_int);
 
         
         let hashed_secret = calculate_hash(&secret.to_string());
@@ -96,9 +95,7 @@ impl SecretSharing {
     pub fn solve(ciphered_message: Vec<u8>, initialization_vector: &GenericArray<u8,U16>, shares: Vec<Point> ) -> String {
         let secret = interpolate(shares);
 
-        let truncated_secret = f64::trunc(secret*100000000.0)/100000000.0;
-
-        let key = calculate_hash(&truncated_secret.to_string());
+        let key = calculate_hash(&secret.to_string());
 
         decipher_message(&key, &initialization_vector, ciphered_message)
     }
@@ -137,22 +134,22 @@ fn generate_random_initialization_vector() -> GenericArray<u8,U16>{
 }
 
 
-fn calculate_y(x:u32, poly:&Vec<f64> ) -> f64 {
+fn calculate_y(x:u32, poly:&Vec<Float> ) -> Float {
     
-    let mut y:f64 = 0.0;
-    let mut temp:f64 = 1.0; 
+    let mut y:Float = Float::with_val(2048,0.0);
+    let mut temp:Float = Float::with_val(2048,1.0);
 
     for coefficient in poly{
-        y = y+(coefficient * temp);
-        temp = temp * x as f64;
+        y = y+(coefficient * temp.clone());
+        temp = &temp * Float::with_val(2048,x);
     }
     y
     
 }
 
-fn secret_sharing(secret:f64, total_shares:u32, minimum_shares:u32) -> Vec<Point>{
+fn secret_sharing(secret:Float, total_shares:u32, minimum_shares:u32) -> Vec<Point>{
     //This will hold the coefficients of the polynome
-    let mut polynome:Vec<f64> = Vec::new();
+    let mut polynome:Vec<Float> = Vec::new();
 
     //The first element of the polynome is the secret
     polynome.push(secret);
@@ -161,11 +158,13 @@ fn secret_sharing(secret:f64, total_shares:u32, minimum_shares:u32) -> Vec<Point
     let mut rng = thread_rng();
 
     for _ in 1..minimum_shares{
-        let mut p:f64 = 0.0;
+        let mut p:Float = Float::with_val(2048, 0.0);
 
         //This while loop ensures that we are not adding a value of 0 into the polynome
         while p == 0.0{
-            p = rng.gen::<f64>() % PRIME;
+            let random_float = Float::with_val(2048, rng.gen::<f64>());
+
+            p = random_float % PRIME;
         }
         polynome.push(p);
     }
@@ -177,9 +176,9 @@ fn secret_sharing(secret:f64, total_shares:u32, minimum_shares:u32) -> Vec<Point
     //
     //The points from this resulting vector are the ones that we share to form the secret back
     for x in 1..=total_shares{
-        let y:f64 = calculate_y(x,&polynome);
+        let y:Float = calculate_y(x,&polynome);
         
-        result.push(Point::new(x as f64,y));
+        result.push(Point::new(Float::with_val(2048, x),y));
     }
 
     result
@@ -187,17 +186,17 @@ fn secret_sharing(secret:f64, total_shares:u32, minimum_shares:u32) -> Vec<Point
 
 }
 
-pub fn interpolate (polynome:Vec<Point>) -> f64{
+pub fn interpolate (polynome:Vec<Point>) -> Float{
 
     let n_elements = polynome.len();
-    let mut result = 0 as f64;
+    let mut result:Float = Float::with_val(2048, 0.0);
 
     for i in 0..n_elements{
-        let mut product = polynome[i].y;
+        let mut product = polynome[i].y.clone();
         for j in 0..n_elements{
             if i!=j{
-                let denominator = polynome[i].x -polynome[j].x;
-                let numerator = -polynome[j].x;
+                let denominator = polynome[i].x.clone() -polynome[j].x.clone();
+                let numerator = -polynome[j].x.clone();
                 product = product * (numerator/denominator);
             }
         }
@@ -213,28 +212,30 @@ mod tests{
 
     #[test]
     fn create_point(){
-        let point = Point::new(1.0,2.0);
+        let point = Point::new(Float::with_val(2048, 1.0),Float::with_val(2048, 2.0));
         assert_eq!(1.0,point.x);
         assert_eq!(2.0,point.y);
     }
     #[test]
     fn check_interpolate(){
-        let secret = 1234.0;
-        let polynome = secret_sharing(secret as f64,10,5);
+        let secret = Float::with_val(2048, 1234.0);
+        let polynome = secret_sharing(secret.clone(),10,5);
         let vec:Vec<Point> = Vec::from_iter(polynome[3..=8].iter().cloned());
-        assert_eq!(interpolate(vec),secret as f64);
+        assert_eq!(interpolate(vec),secret);
     }
 
     #[test]
     fn check_interpolate_with_less_than_minimum_shares(){
-        let polynome = secret_sharing(1234 as f64, 10 ,5);
+        let secret = Float::with_val(2048, 1234.0);
+        let polynome = secret_sharing(secret, 10 ,5);
         let vec:Vec<Point> = Vec::from_iter(polynome[4..=7].iter().cloned()); // 4 shares 4,5,6,7
         assert_ne!(interpolate(vec),1234 as f64);
     }
 
     #[test]
     fn check_polynome_length(){
-        let polynome = secret_sharing(1234 as f64,10,5);
+        let secret = Float::with_val(2048, 1234.0);
+        let polynome = secret_sharing(secret,10,5);
         assert_eq!(polynome[4..=8].len(),5); //from 4 to 8
     }
 
