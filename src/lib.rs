@@ -1,4 +1,5 @@
 
+use lazy_static::lazy_static;
 use rand::{Rng,thread_rng};
 
 use aes::cipher::{
@@ -13,6 +14,13 @@ use rug::Float;
 
 
 type Aes256Ctr128BE = ctr::Ctr128BE<aes::Aes256>;
+
+extern crate lazy_static;
+
+lazy_static!{
+    static ref ZERO: Float = Float::with_val(2048,0.0);
+    static ref ONE: Float = Float::with_val(2048,1.0);
+}
 
 const PRIME:f64 = (2u64.pow(61)-1) as f64;
 
@@ -136,8 +144,8 @@ fn generate_random_initialization_vector() -> GenericArray<u8,U16>{
 
 fn calculate_y(x:u32, poly:&Vec<Float> ) -> Float {
     
-    let mut y:Float = Float::with_val(2048,0.0);
-    let mut temp:Float = Float::with_val(2048,1.0);
+    let mut y:Float = ZERO.clone();
+    let mut temp:Float = ONE.clone();
 
     for coefficient in poly{
         y = y+(coefficient * temp.clone());
@@ -158,7 +166,7 @@ fn secret_sharing(secret:Float, total_shares:u32, minimum_shares:u32) -> Vec<Poi
     let mut rng = thread_rng();
 
     for _ in 1..minimum_shares{
-        let mut p:Float = Float::with_val(2048, 0.0);
+        let mut p:Float = ZERO.clone();
 
         //This while loop ensures that we are not adding a value of 0 into the polynome
         while p == 0.0{
@@ -189,7 +197,7 @@ fn secret_sharing(secret:Float, total_shares:u32, minimum_shares:u32) -> Vec<Poi
 pub fn interpolate (polynome:Vec<Point>) -> Float{
 
     let n_elements = polynome.len();
-    let mut result:Float = Float::with_val(2048, 0.0);
+    let mut result:Float = ZERO.clone();
 
     for i in 0..n_elements{
         let mut product = polynome[i].y.clone();
