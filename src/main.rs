@@ -3,7 +3,7 @@ use aes::cipher::consts::U16;
 use shamir_secret_sharing::*;
 use std::fs;
 use serde::{Serialize, Deserialize};
-use chrono;
+
 use std::env;
 use std::path::Path;
 use aes::cipher::generic_array::GenericArray;
@@ -88,17 +88,13 @@ fn main() -> io::Result<()> {
         let serialized_data = generate_json(secret);
 
         let save_dir = chrono::offset::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
-        match fs::create_dir_all(&save_dir){
-            _ => ()
-        }
+        fs::create_dir_all(&save_dir)?;
 
         let size = serialized_data.len();
 
         for (i,data) in serialized_data.iter().enumerate(){
             let filepath = format!("{}/{}.json",&save_dir,size-i);
-            match fs::write(&filepath, data){
-                _ => ()
-            }
+            fs::write(&filepath, data)?;
         }
 
     }
@@ -118,9 +114,9 @@ fn text_input(prompt_text: &String) -> String{
         .read_line(&mut in_text)
         .expect("Failed to read the line");
     
-    if in_text.ends_with("\n"){
+    if in_text.ends_with('\n'){
         in_text.pop().unwrap();
-        if in_text.ends_with("\r"){
+        if in_text.ends_with('\r'){
             in_text.pop().unwrap();
         }
     }
@@ -139,9 +135,9 @@ fn generate_json(secret_sharing : SecretSharing) -> Vec<String>{
         match polynomial.pop(){
             Some(point) => {
                 let serialized_data = SerializedData{
-                    point : point,
+                    point,
                     minimum_shares : min_shares,
-                    total_shares : total_shares,
+                    total_shares,
                     ciphered_message : ciphered_message.clone(),
                     initialization_vector : secret_sharing.initialization_vector().to_vec() 
                 };

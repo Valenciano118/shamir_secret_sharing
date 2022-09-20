@@ -32,8 +32,8 @@ pub struct Point{
 impl Point {
     pub fn new(x:Float, y:Float) -> Self {
         Point{
-            x:x,
-            y:y
+            x,
+            y
         }
     }
 }
@@ -60,43 +60,43 @@ impl SecretSharing {
 
         let iv = generate_random_initialization_vector();
 
-        let ciphered_message = cipher_message(&hashed_secret, &message,&iv);
+        let ciphered_message = cipher_message(&hashed_secret, message,&iv);
 
         let polynomial = secret_sharing(secret, total_shares, minimum_shares);
 
         Self { 
-            ciphered_message: ciphered_message ,
-            hashed_secret: hashed_secret,
+            ciphered_message ,
+            hashed_secret,
             initialization_vector: iv,
-            total_shares: total_shares,
-            minimum_shares: minimum_shares,
-            polynomial: polynomial 
+            total_shares,
+            minimum_shares,
+            polynomial 
         }
 
 
     }
 
-    pub fn ciphered_message(self : &Self) -> Vec<u8> {
+    pub fn ciphered_message(&self) -> Vec<u8> {
         self.ciphered_message.clone()
     }
 
-    pub fn hashed_secret(self : &Self ) -> GenericArray<u8,U32> {
+    pub fn hashed_secret(&self ) -> GenericArray<u8,U32> {
         self.hashed_secret
     }
 
-    pub fn initialization_vector( self : &Self) -> GenericArray<u8,U16>{
+    pub fn initialization_vector( &self) -> GenericArray<u8,U16>{
         self.initialization_vector
     }
 
-    pub fn total_shares(self : &Self) -> u32 {
+    pub fn total_shares(&self) -> u32 {
         self.total_shares
     }
     
-    pub fn minimum_shares(self : &Self) ->u32 {
+    pub fn minimum_shares(&self) ->u32 {
         self.minimum_shares
     }
 
-    pub fn polynomial(self : &Self) -> Vec<Point> {
+    pub fn polynomial(&self) -> Vec<Point> {
         self.polynomial.clone()
     }
 
@@ -105,7 +105,7 @@ impl SecretSharing {
 
         let key = calculate_hash(&secret.to_string());
 
-        decipher_message(&key, &initialization_vector, ciphered_message)
+        decipher_message(&key, initialization_vector, ciphered_message)
     }
 }
 
@@ -117,7 +117,7 @@ pub fn calculate_hash<T: AsRef<[u8]>>(t: &T) -> GenericArray<u8,U32> {
 
 pub fn cipher_message(key: &GenericArray<u8,U32>, message: &str, initialization_vector: &GenericArray<u8,U16>) -> Vec<u8> {
     let mut buf = vec![0u8;message.len()];
-    let mut cipher= Aes256Ctr128BE::new(&key,&initialization_vector);
+    let mut cipher= Aes256Ctr128BE::new(key,initialization_vector);
 
     cipher.apply_keystream_b2b(message.as_bytes(),&mut buf).unwrap();
     buf
@@ -148,7 +148,7 @@ fn calculate_y(x:u32, poly:&Vec<Float> ) -> Float {
     let mut temp:Float = ONE.clone();
 
     for coefficient in poly{
-        y = y+(coefficient * temp.clone());
+        y += coefficient * temp.clone();
         temp = &temp * Float::with_val(2048,x);
     }
     y
@@ -205,7 +205,7 @@ pub fn interpolate (polynome:Vec<Point>) -> Float{
             if i!=j{
                 let denominator = polynome[i].x.clone() -polynome[j].x.clone();
                 let numerator = -polynome[j].x.clone();
-                product = product * (numerator/denominator);
+                product *= numerator/denominator;
             }
         }
         result += product;
@@ -237,7 +237,7 @@ mod tests{
         let secret = Float::with_val(2048, 1234.0);
         let polynome = secret_sharing(secret, 10 ,5);
         let vec:Vec<Point> = Vec::from_iter(polynome[4..=7].iter().cloned()); // 4 shares 4,5,6,7
-        assert_ne!(interpolate(vec),1234 as f64);
+        assert_ne!(interpolate(vec),1234_f64);
     }
 
     #[test]
@@ -285,7 +285,7 @@ mod tests{
 
         
         cipher
-            .apply_keystream_b2b(&plaintext.as_bytes(), &mut buf1)
+            .apply_keystream_b2b(plaintext.as_bytes(), &mut buf1)
             .unwrap();
         
         let mut cipher = Aes256Ctr128BE::new(&key.into(), &iv.into());
