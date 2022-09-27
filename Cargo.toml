@@ -38,7 +38,6 @@ panic = 'abort'
 codegen-units = 1
 
 [profile.testing]
-strip = true
-opt-level = 2
+inherits = "release"
 lto = "thin"
-panic = "abort"
+codegen-units = 16
