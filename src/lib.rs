@@ -1,6 +1,5 @@
 
 use lazy_static::lazy_static;
-use rand::{Rng,thread_rng};
 
 use aes::cipher::{
     KeyIvInit, StreamCipher,
@@ -11,6 +10,7 @@ use sha2::digest::generic_array::typenum::U32;
 use sha2::digest::generic_array::typenum::U16;
 use serde::{Serialize, Deserialize};
 use rug::Float;
+
 
 
 type Aes256Ctr128BE = ctr::Ctr128BE<aes::Aes256>;
@@ -50,8 +50,7 @@ pub struct SecretSharing {
 
 impl SecretSharing {
     pub fn new (message: &str, total_shares:u32, minimum_shares:u32) -> Self {
-        let mut rng = thread_rng();
-        let secret_int:u64 = rng.gen_range(0..100000);
+        let secret_int:u64 = fastrand::u64(..);
 
         let secret = Float::with_val(2048, secret_int);
 
@@ -163,14 +162,13 @@ fn secret_sharing(secret:Float, total_shares:u32, minimum_shares:u32) -> Vec<Poi
     polynome.push(secret);
 
     //We initialise the random number generator
-    let mut rng = thread_rng();
 
     for _ in 1..minimum_shares{
         let mut p:Float = ZERO.clone();
 
         //This while loop ensures that we are not adding a value of 0 into the polynome
         while p == 0.0{
-            let random_float = Float::with_val(2048, rng.gen::<f64>());
+            let random_float = Float::with_val(2048, fastrand::f64());
 
             p = random_float % PRIME;
         }
