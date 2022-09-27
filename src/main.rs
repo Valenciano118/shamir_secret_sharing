@@ -1,8 +1,10 @@
+use std::ffi::OsStr;
 use std::io::{self, Write};
 use aes::cipher::consts::U16;
 use shamir_secret_sharing::*;
 use std::fs;
 use serde::{Serialize, Deserialize};
+
 
 use std::env;
 use std::path::Path;
@@ -24,12 +26,20 @@ fn main() -> io::Result<()> {
             .collect::<Result<Vec<_>, io::Error>>()?;
 
         let mut read_files: Vec<SerializedData> = Vec::new();
+        let mut read_message: SerializedMessage = SerializedMessage { ciphered_message: Vec::new() };
 
         for entry in entries{
-            let file_content = String::from_utf8_lossy(&fs::read(entry)?).into_owned();
+            if entry.file_name().unwrap() == OsStr::new("secret.json") {
+                let file_content = String::from_utf8_lossy(&fs::read(entry)?).into_owned();
             
-            let deserialized: SerializedData = serde_json::from_str(&file_content).unwrap();
-            read_files.push(deserialized);
+                read_message = serde_json::from_str(&file_content).unwrap();
+            }
+            else {
+                let file_content = String::from_utf8_lossy(&fs::read(entry)?).into_owned();
+                
+                let deserialized: SerializedData = serde_json::from_str(&file_content).unwrap();
+                read_files.push(deserialized);
+            }
         }
 
         let min_shares = read_files[0].minimum_shares;
@@ -37,7 +47,7 @@ fn main() -> io::Result<()> {
             panic!("There are not enough files to decipher the message, minimum needed:{}, and {} were provided",min_shares, read_files.len()); 
         }
 
-        let ciphered_message = read_files[0].ciphered_message.clone();
+        let ciphered_message = read_message.ciphered_message.clone();
         let mut initialization_vector:GenericArray<u8,U16> = GenericArray::default();
         initialization_vector.copy_from_slice(&read_files[0].initialization_vector[..]);
 
@@ -85,13 +95,14 @@ fn main() -> io::Result<()> {
 
         let secret = SecretSharing::new(&file_content,total_shares,minimum_shares);
 
-        let serialized_data = generate_json(secret);
+        let (serialized_data, serialized_message) = generate_json(secret);
 
         let save_dir = chrono::offset::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
         fs::create_dir_all(&save_dir)?;
 
         let size = serialized_data.len();
 
+        fs::write(format!("{}/secret.json",&save_dir),serialized_message)?;
         for (i,data) in serialized_data.iter().enumerate(){
             let filepath = format!("{}/{}.json",&save_dir,size-i);
             fs::write(&filepath, data)?;
@@ -123,7 +134,7 @@ fn text_input(prompt_text: &String) -> String{
     in_text
 }
 
-fn generate_json(secret_sharing : SecretSharing) -> Vec<String>{
+fn generate_json(secret_sharing : SecretSharing) -> (Vec<String>, String){
 
     let mut result:Vec<String> = Vec::new();
     let mut polynomial = secret_sharing.polynomial();
@@ -138,7 +149,6 @@ fn generate_json(secret_sharing : SecretSharing) -> Vec<String>{
                     point,
                     minimum_shares : min_shares,
                     total_shares,
-                    ciphered_message : ciphered_message.clone(),
                     initialization_vector : secret_sharing.initialization_vector().to_vec() 
                 };
                 result.push(serde_json::to_string(&serialized_data).unwrap());
@@ -146,7 +156,13 @@ fn generate_json(secret_sharing : SecretSharing) -> Vec<String>{
             None => break
         }   
     }
-    result
+
+    let serialized_message =  SerializedMessage{
+        ciphered_message: ciphered_message
+    };
+
+    let result2 = serde_json::to_string(&serialized_message).unwrap();
+    (result,result2)
 
 }
 
@@ -155,6 +171,10 @@ struct SerializedData{
     point : Point,
     minimum_shares : u32,
     total_shares : u32,
-    ciphered_message : Vec<u8>,
     initialization_vector : Vec<u8>
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct SerializedMessage {
+    ciphered_message: Vec<u8>
 }
