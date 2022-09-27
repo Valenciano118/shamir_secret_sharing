@@ -135,7 +135,11 @@ fn decipher_message(key: &GenericArray<u8,U32>, initialization_vector: &GenericA
 }
 
 fn generate_random_initialization_vector() -> GenericArray<u8,U16>{
-    let temp_iv_array: [u8;16] = repeat_with(|| fastrand::u8(..)).take(16).collect::<Vec<u8>>()[..].try_into().unwrap();
+    let temp_iv_array: [u8;16] = repeat_with(|| fastrand::u8(..))
+                                    .take(16)
+                                    .collect::<Vec<u8>>()[..]
+                                    .try_into()
+                                    .unwrap();
     let mut iv:GenericArray<u8,U16> = GenericArray::default();
     iv.copy_from_slice(&temp_iv_array);
     
